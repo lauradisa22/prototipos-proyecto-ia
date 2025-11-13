@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HVAI - Panel de Integridad</title>
+    <!-- TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter (para el cuerpo) y Dancing Script (para el logo) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Estilos personalizados para fuentes */
+        .font-inter {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-logo {
+            font-family: 'Dancing Script', cursive;
+        }
+    </style>
+    
+    <script>
+        // Configuración de Tailwind para incluir los colores personalizados de la imagen
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'hvai-dark-purple': '#3b0b5e', // El morado oscuro de fondo
+                        'hvai-lavender': '#e6e0f8',   // El lavanda claro del header
+                        'hvai-accent-green': '#c8d73b', // El verde/amarillo para 'CambiA'
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif'],
+                        'logo': ['Dancing Script', 'cursive'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-hvai-dark-purple text-white font-sans min-h-screen">
+
+    <!-- Header (Basado en la imagen) -->
+    <header class="bg-hvai-lavender text-hvai-dark-purple p-6 shadow-lg">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
+            <h1 class="font-logo text-5xl font-bold">
+                Colomb<span class="text-hvai-accent-green">IA</span> Camb<span class="text-hvai-accent-green">IA</span>
+            </h1>
+            <p class="text-lg font-semibold mt-2 md:mt-0">El Observatorio y Ministerio IA</p>
+        </div>
+        <div class="container mx-auto text-center md:text-left mt-4">
+            <h2 class="text-2xl font-bold">Hub de Vigilancia Agéntica para la Integridad (HVAI)</h2>
+            <p class="text-md">Una solución disruptiva que utiliza IA Agéntica para la Integridad Pública.</p>
+            <p class="text-md font-semibold">Este panel forma parte de la Autoridad BIA.</p>
+        </div>
+    </header>
+
+    <!-- Contenido Principal: Dashboard -->
+    <main class="container mx-auto p-6 mt-6">
+        
+        <h3 class="text-3xl font-bold mb-6">Panel de Control: Licitaciones Activas</h3>
+
+        <!-- Filtros (Simulación de interacción) -->
+        <div class="flex space-x-2 mb-6" id="filters">
+            <button class="filter-btn bg-white text-hvai-dark-purple py-2 px-4 rounded-lg font-semibold shadow hover:bg-gray-200" data-risk="all">Todas</button>
+            <button class="filter-btn bg-red-600 text-white py-2 px-4 rounded-lg font-semibold shadow hover:bg-red-700" data-risk="alto">Riesgo Alto</button>
+            <button class="filter-btn bg-yellow-500 text-white py-2 px-4 rounded-lg font-semibold shadow hover:bg-yellow-600" data-risk="medio">Riesgo Medio</button>
+            <button class="filter-btn bg-green-600 text-white py-2 px-4 rounded-lg font-semibold shadow hover:bg-green-700" data-risk="bajo">Riesgo Bajo</button>
+        </div>
+
+        <!-- Lista de Licitaciones (Scorecards) -->
+        <div class="bg-white bg-opacity-10 p-4 rounded-lg shadow-inner">
+            <div id="licitacion-list" class="space-y-4">
+                <!-- Los items se cargarán dinámicamente aquí -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal (Simulación de XAI y HITL) -->
+    <div id="details-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white text-hvai-dark-purple rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            
+            <!-- Contenido del Modal -->
+            <div class="p-8">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h4 class="text-2xl font-bold" id="modal-title">Detalles del Proceso</h4>
+                        <span class="text-sm text-gray-500" id="modal-id"></span>
+                    </div>
+                    <button id="close-modal" class="text-gray-400 hover:text-gray-600 text-3xl">&times;</button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Columna 1: Info General y Alerta -->
+                    <div class="space-y-4">
+                        <div>
+                            <span class="text-xs font-semibold text-gray-500">Nivel de Riesgo Asignado</span>
+                            <div id="modal-risk" class="text-2xl font-bold"></div>
+                        </div>
+                        
+                        <div>
+                            <span class="text-xs font-semibold text-gray-500">Entidad</span>
+                            <p class="text-lg" id="modal-entity"></p>
+                        </div>
+                        
+                        <div>
+                            <span class="text-xs font-semibold text-gray-500">Objeto del Contrato</span>
+                            <p class="text-lg" id="modal-object"></p>
+                        </div>
+
+                        <div>
+                            <span class="text-xs font-semibold text-gray-500">Protocolo Activado (Principio 5)</span>
+                            <p class="text-lg" id="modal-protocol"></p>
+                        </div>
+                    </div>
+
+                    <!-- Columna 2: XAI y HITL -->
+                    <div class="space-y-4">
+                        <!-- Principio 2: Explicabilidad (XAI) -->
+                        <div class="bg-gray-100 p-4 rounded-lg">
+                            <h5 class="font-bold text-lg mb-2">Explicabilidad (XAI)</h5>
+                            <p class="mb-2">El riesgo se asigna <strong id="modal-risk-level-text"></strong> debido a:</p>
+                            <ul id="modal-xai-factors" class="list-disc list-inside text-sm space-y-1">
+                                <!-- Factores XAI se cargarán aquí -->
+                            </ul>
+                        </div>
+                        
+                        <!-- Gobernanza: Human-in-the-Loop (HITL) -->
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                             <h5 class="font-bold text-lg mb-2">Gobernanza (Human-in-the-Loop)</h5>
+                            <p class="text-sm mb-3">La decisión final recae en el auditor humano (Principio 1).</p>
+                            
+                            <div>
+                                <label for="hitl-justification" class="text-sm font-semibold text-gray-700">Justificación del Auditor:</label>
+                                <textarea id="hitl-justification" rows="3" class="w-full mt-1 p-2 border border-gray-300 rounded-lg text-sm" placeholder="El auditor debe registrar la justificación de su decisión final..."></textarea>
+                                <p id="justification-error" class="text-red-600 text-xs hidden">La justificación es obligatoria para registrar la decisión.</p>
+                            </div>
+                            
+                            <div id="hitl-buttons" class="flex space-x-2 mt-3">
+                                <button id="accept-alert-btn" class="flex-1 bg-green-600 text-white py-2 px-3 rounded-lg text-sm font-semibold hover:bg-green-700">Aceptar Alerta y Escalar</button>
+                                <button id="reject-alert-btn" class="flex-1 bg-gray-500 text-white py-2 px-3 rounded-lg text-sm font-semibold hover:bg-gray-600">Rechazar Alerta</button>
+                            </div>
+
+                            <!-- Registro de Decisión (Simulación de Request 3 y 4) -->
+                            <div id="audit-log-section" class="mt-4 hidden">
+                                <h6 class="font-bold text-md mb-2">Registro de Decisión (Simulado)</h6>
+                                <div id="audit-log-content" class="bg-gray-100 p-3 rounded-lg text-xs space-y-1">
+                                    <!-- Log entries will be added here -->
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATOS SIMULADOS ---
+        // Esto simula el output agregado de los Módulos 1, 2 y 3.
+        const mockLicitaciones = [
+            {
+                id: 'LIC-2025-001',
+                entity: 'Gobernación de Cundinamarca',
+                object: 'Construcción de vía terciaria sector norte.',
+                risk: 'alto',
+                riskScore: 92,
+                xaiFactors: [
+                    '[Módulo 2] Identificación de clúster de proponentes con alta interconexión (posible colusión).',
+                    '[Módulo 3] Patrones de pliego similares a 5 contratos históricos que resultaron en sobrecostos.',
+                    '[Módulo 1] Proponente principal (ConstruMax S.A.) con registro RUES inconsistente.'
+                ],
+                protocol: 'Auditoría inmediata por organismo de control externo (Nivel 3 HITL).'
+            },
+            {
+                id: 'LIC-2025-002',
+                entity: 'Ministerio de TIC',
+                object: 'Adquisición de plataforma de software E-learning.',
+                risk: 'bajo',
+                riskScore: 18,
+                xaiFactors: [
+                    '[Módulo 2] Red de proponentes diversa y sin conexiones anómalas.',
+                    '[Módulo 3] Pliego de condiciones claro y alineado con precios de mercado.',
+                    '[Módulo 1] Datos de RUES y SECOP consistentes para todos los oferentes.'
+                ],
+                protocol: 'Notificación informativa. No requiere intervención obligatoria.'
+            },
+            {
+                id: 'LIC-2025-003',
+                entity: 'Alcaldía de Medellín',
+                object: 'Suministro de dotación para personal de emergencias.',
+                risk: 'medio',
+                riskScore: 55,
+                xaiFactors: [
+                    '[Módulo 3] Precio de referencia un 15% por debajo del promedio sectorial (riesgo de baja calidad).',
+                    '[Módulo 1] Uno de los proponentes presenta valores faltantes en datos de SIGEP.',
+                ],
+                protocol: 'Revisión obligatoria por supervisor humano interno (Nivel 2 HITL).'
+            },
+            {
+                id: 'LIC-2025-004',
+                entity: 'Contraloría General',
+                object: 'Servicios de mantenimiento de servidores.',
+                risk: 'bajo',
+                riskScore: 22,
+                xaiFactors: [
+                    '[Módulo 2] Proponentes con historial verificado y sin relaciones entre sí.',
+                    '[Módulo 3] Proceso competitivo con 8 oferentes válidos.'
+                ],
+                protocol: 'Notificación informativa.'
+            },
+            {
+                id: 'LIC-2025-005',
+                entity: 'Gobernación de Antioquia',
+                object: 'Programa de alimentación escolar (PAE) - Zona Urabá.',
+                risk: 'alto',
+                riskScore: 81,
+                xaiFactors: [
+                    '[Módulo 2] Proponente único relacionado societariamente con funcionario evaluador (detectado en SIGEP).',
+                    '[Módulo 3] Historial de incumplimientos del proponente en contratos anteriores.',
+                    '[Módulo 1] Inconsistencias en cámaras de comercio de socios.'
+                ],
+                protocol: 'Auditoría inmediata por organismo de control externo (Nivel 3 HITL).'
+            }
+        ];
+
+        // --- LÓGICA DEL PROTOTIPO ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const listElement = document.getElementById('licitacion-list');
+            const modal = document.getElementById('details-modal');
+            const closeModalBtn = document.getElementById('close-modal');
+            const filterContainer = document.getElementById('filters');
+            
+            // --- Nuevos elementos del Modal ---
+            const acceptBtn = document.getElementById('accept-alert-btn');
+            const rejectBtn = document.getElementById('reject-alert-btn');
+            const justificationText = document.getElementById('hitl-justification');
+            const justificationError = document.getElementById('justification-error');
+            const hitlButtons = document.getElementById('hitl-buttons');
+            const auditLogSection = document.getElementById('audit-log-section');
+            const auditLogContent = document.getElementById('audit-log-content');
+            let currentItemRisk = null; // Para rastrear el riesgo del item actual
+
+            // Función para renderizar la lista de licitaciones
+            function renderList(filterRisk = 'all') {
+                listElement.innerHTML = ''; // Limpiar lista
+                
+                const filteredList = mockLicitaciones.filter(item => 
+                    filterRisk === 'all' || item.risk === filterRisk
+                );
+
+                if (filteredList.length === 0) {
+                    listElement.innerHTML = '<p class="text-white text-center opacity-70">No se encontraron procesos con ese nivel de riesgo.</p>';
+                    return;
+                }
+
+                filteredList.forEach(item => {
+                    const riskColorClasses = {
+                        alto: 'border-red-500 bg-red-900 bg-opacity-30',
+                        medio: 'border-yellow-500 bg-yellow-900 bg-opacity-30',
+                        bajo: 'border-green-500 bg-green-900 bg-opacity-30'
+                    };
+                    
+                    const riskTextClasses = {
+                        alto: 'text-red-400',
+                        medio: 'text-yellow-400',
+                        bajo: 'text-green-400'
+                    };
+
+                    const itemHTML = `
+                        <div class="p-4 rounded-lg border-l-4 ${riskColorClasses[item.risk]} flex flex-col md:flex-row justify-between items-center transition-all duration-300 hover:bg-white hover:bg-opacity-20">
+                            <div class="flex-1 mb-3 md:mb-0">
+                                <div class="flex items-center space-x-3">
+                                    <span class="font-bold text-lg ${riskTextClasses[item.risk]} capitalize">${item.risk.toUpperCase()} (${item.riskScore}%)</span>
+                                    <span class="text-sm text-gray-300">${item.id}</span>
+                                </div>
+                                <p class="text-lg text-white font-semibold">${item.entity}</p>
+                                <p class="text-md text-gray-200">${item.object}</p>
+                            </div>
+                            <button class="view-details-btn bg-white text-hvai-dark-purple py-2 px-5 rounded-lg font-semibold shadow-md hover:bg-gray-200" data-id="${item.id}">
+                                Ver Detalles (XAI / HITL)
+                            </button>
+                        </div>
+                    `;
+                    listElement.innerHTML += itemHTML;
+                });
+
+                // Añadir event listeners a los nuevos botones de detalles
+                addDetailButtonListeners();
+            }
+
+            // Función para abrir y poblar el modal
+            function openModal(id) {
+                const item = mockLicitaciones.find(i => i.id === id);
+                if (!item) return;
+
+                currentItemRisk = item.risk; // Guardar el riesgo para la lógica de escalamiento
+
+                document.getElementById('modal-id').innerText = item.id;
+                document.getElementById('modal-entity').innerText = item.entity;
+                document.getElementById('modal-object').innerText = item.object;
+                
+                const riskElement = document.getElementById('modal-risk');
+                riskElement.innerText = `${item.risk.toUpperCase()} (${item.riskScore}%)`;
+                riskElement.className = 'text-2xl font-bold'; // Reset class
+                if(item.risk === 'alto') riskElement.classList.add('text-red-600');
+                if(item.risk === 'medio') riskElement.classList.add('text-yellow-600');
+                if(item.risk === 'bajo') riskElement.classList.add('text-green-600');
+
+                document.getElementById('modal-protocol').innerText = item.protocol;
+                document.getElementById('modal-risk-level-text').innerText = `"${item.risk}"`;
+
+                const xaiList = document.getElementById('modal-xai-factors');
+                xaiList.innerHTML = '';
+                item.xaiFactors.forEach(factor => {
+                    xaiList.innerHTML += `<li>${factor}</li>`;
+                });
+
+                // Resetear el estado del modal (para HITL y Logs)
+                justificationText.value = '';
+                justificationText.disabled = false;
+                justificationText.classList.remove('border-red-500');
+                justificationError.classList.add('hidden');
+                hitlButtons.classList.remove('hidden');
+                auditLogSection.classList.add('hidden');
+                auditLogContent.innerHTML = '';
+
+                modal.classList.remove('hidden');
+            }
+
+            // --- Event Listeners ---
+
+            // Cerrar Modal
+            closeModalBtn.addEventListener('click', () => modal.classList.add('hidden'));
+            modal.addEventListener('click', (e) => {
+                // Cerrar si se hace clic en el fondo oscuro
+                if (e.target.id === 'details-modal') {
+                    modal.classList.add('hidden');
+                }
+            });
+
+            // Abrir Modal (usando delegación de eventos)
+            function addDetailButtonListeners() {
+                listElement.querySelectorAll('.view-details-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.currentTarget.dataset.id;
+                        openModal(id);
+                    });
+                });
+            }
+
+            // --- Nuevas funciones para HITL (Request 3 y 4) ---
+            function handleDecision(decisionType) {
+                const justification = justificationText.value.trim();
+                
+                // Validación (Principio de Accountability)
+                if (justification === '') {
+                    justificationError.classList.remove('hidden');
+                    justificationText.classList.add('border-red-500');
+                    return;
+                }
+
+                // Si es válido, ocultar error
+                justificationError.classList.add('hidden');
+                justificationText.classList.remove('border-red-500');
+
+                // 1. Crear el Log de Decisión (Request 4)
+                const timestamp = new Date().toLocaleString('es-CO');
+                let decisionLog = `
+                    <p><strong>Decisión:</strong> ${decisionType}</p>
+                    <p><strong>Auditor:</strong> (Simulado) auditor.interno@entidad.gov.co</p>
+                    <p><strong>Fecha:</strong> ${timestamp}</p>
+                    <p><strong>Justificación:</strong> ${justification}</p>
+                `;
+
+                // 2. Simular Flujo de Escalamiento (Request 3)
+                if (decisionType === 'ALERTA ACEPTADA' && currentItemRisk === 'alto') {
+                    decisionLog += '<p class="font-bold text-red-600 mt-1">ACCIÓN: Escalado automático al Comité Ético BIA.</p>';
+                }
+
+                // 3. Mostrar el log y bloquear controles
+                auditLogContent.innerHTML = decisionLog;
+                auditLogSection.classList.remove('hidden');
+
+                // Simular que la decisión está "grabada"
+                justificationText.disabled = true;
+                hitlButtons.classList.add('hidden');
+            }
+
+            // Asignar eventos a los botones de decisión
+            acceptBtn.addEventListener('click', () => handleDecision('ALERTA ACEPTADA'));
+            rejectBtn.addEventListener('click', () => handleDecision('ALERTA RECHAZADA'));
+
+            // Filtros
+            filterContainer.addEventListener('click', (e) => {
+                if(e.target.classList.contains('filter-btn')) {
+                    const risk = e.target.dataset.risk;
+                    renderList(risk);
+                    
+                    // Estilo de botón activo
+                    filterContainer.querySelectorAll('.filter-btn').forEach(btn => {
+                        btn.classList.remove('ring-2', 'ring-offset-2', 'ring-hvai-accent-green');
+                    });
+                    e.target.classList.add('ring-2', 'ring-offset-2', 'ring-hvai-accent-green');
+                }
+            });
+
+            // Carga Inicial
+            renderList('all');
+            // Marcar 'Todas' como activo
+            filterContainer.querySelector('[data-risk="all"]').classList.add('ring-2', 'ring-offset-2', 'ring-hvai-accent-green');
+        });
+    </script>
+</body>
+</html>

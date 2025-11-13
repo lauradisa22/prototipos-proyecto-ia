@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prototipo BIA - Observatorio IA</title>
+    <!-- 1. Cargar Tailwind CSS para el diseño rápido -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. Cargar las tipografías de Google Fonts (Inter y Dancing Script) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+    <!-- 3. Estilos personalizados inspirados en tu imagen -->
+    <style>
+        :root {
+            --bg-dark-purple: #3a006f; /* El morado más oscuro del fondo */
+            --bg-mid-purple: #500194;  /* El morado de la franja superior */
+            --accent-pink: #c499f5;    /* El color fucsia/lila de "Colombia Cambia" */
+            --text-light: #ffffff;
+        }
+
+        /* Aplicar la fuente base al cuerpo */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark-purple);
+            color: var(--text-light);
+            /* Asegurar que el 100vh funcione bien en móviles */
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+        }
+
+        /* Estilo para el título "Bia", imitando la fuente script */
+        .font-title {
+            font-family: 'Dancing Script', cursive;
+            color: var(--accent-pink);
+        }
+
+        /* Estilos para las burbujas de chat */
+        .chat-bubble {
+            max-width: 80%;
+            padding: 0.75rem 1rem;
+            border-radius: 1.25rem;
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
+
+        .chat-bubble-bia {
+            background-color: var(--bg-mid-purple);
+            color: var(--text-light);
+            border-bottom-left-radius: 0.25rem;
+            align-self: flex-start;
+        }
+
+        .chat-bubble-user {
+            background-color: #4a5568; /* Un gris oscuro para el usuario */
+            color: var(--text-light);
+            border-bottom-right-radius: 0.25rem;
+            align-self: flex-end;
+        }
+        
+        /* Estilos para el menú de opciones */
+        .menu-button {
+            background-color: var(--bg-mid-purple);
+            color: var(--accent-pink);
+            border: 2px solid var(--accent-pink);
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            text-align: left;
+            width: 100%;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        .menu-button:hover, .menu-button:focus {
+            background-color: var(--accent-pink);
+            color: var(--bg-dark-purple);
+            outline: none;
+        }
+
+        /* Animación sutil para el estado "escuchando" */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .listening-pulse {
+            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Mejorar el scrollbar para que sea menos intrusivo */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-pink);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #b180e6;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Contenedor principal que maneja la altura en móviles -->
+    <div class="w-full max-w-lg bg-white/10 backdrop-blur-sm rounded-2xl shadow-2xl flex flex-col" style="max-height: 95vh; height: -webkit-fill-available;">
+        
+        <!-- Cabecera con el logo y título -->
+        <header class="flex-shrink-0 flex items-center gap-4 p-6 border-b border-white/20" style="background-color: var(--bg-mid-purple);">
+            <!-- Icono de Ojo (Logo de Bia) -->
+            <svg class="w-12 h-12 flex-shrink-0" style="color: var(--accent-pink);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <div>
+                <h1 class="text-5xl font-title">Bia</h1>
+                <p class="text-sm opacity-80">Observatorio de IA Colombia</p>
+            </div>
+        </header>
+
+        <!-- Contenedor del Chat (Ahora flexible y con scroll) -->
+        <div id="chat-container" class="p-6 overflow-y-auto flex-grow flex flex-col space-y-4">
+            <!-- Los mensajes del chat se agregarán aquí -->
+            <!-- El menú se inyectará aquí -->
+        </div>
+
+        <!-- Área de estado y botón de acción -->
+        <footer class="flex-shrink-0 p-6 border-t border-white/20">
+            <!-- Muestra el estado actual (ej. "Escuchando...", "Hablando...") -->
+            <div id="status-message" class="text-center text-sm h-6 mb-4 opacity-80">
+                Presiona "Iniciar" para comenzar
+            </div>
+
+            <!-- Botón principal de interacción -->
+            <button id="action-button" class="w-full text-lg font-semibold py-4 rounded-xl transition-all duration-300" style="background-color: var(--accent-pink); color: var(--bg-dark-purple);">
+                Iniciar Prototipo
+            </button>
+        </footer>
+    </div>
+
+    <script>
+        // --- Referencias a los elementos del DOM ---
+        const actionButton = document.getElementById('action-button');
+        const chatContainer = document.getElementById('chat-container');
+        const statusMessage = document.getElementById('status-message');
+
+        // --- Configuración de Speech (STT y TTS) ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const synthesis = window.speechSynthesis;
+        
+        let recognition;
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.lang = 'es-CO'; // Español de Colombia
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+        } else {
+            console.error('Tu navegador no soporta la API de reconocimiento de voz.');
+            statusMessage.textContent = "Error: El reconocimiento de voz no es soportado.";
+        }
+
+        let currentStep = 'START'; // Usaremos estados en lugar de un índice numérico
+        let userName = ""; // Variable para guardar el nombre
+        let lastUserAnswer = ""; // Variable para guardar la última respuesta
+        let isSpeaking = false;
+        let isListening = false;
+        let speechQueue = []; // Cola para manejar múltiples mensajes de voz
+
+        // --- MANEJO CENTRALIZADO DE LA CONVERSACIÓN ---
+
+        actionButton.addEventListener('click', () => {
+            // Evitar múltiples inicios
+            if (actionButton.disabled) return;
+
+            actionButton.disabled = true;
+            actionButton.classList.add('opacity-50');
+            
+            // Asegurarnos de que las voces estén cargadas antes de empezar
+            // Esto es crucial en algunos navegadores como Chrome
+            let voices = synthesis.getVoices();
+            if (voices.length === 0) {
+                synthesis.onvoiceschanged = () => {
+                    handleConversation(currentStep);
+                };
+            } else {
+                handleConversation(currentStep);
+            }
+        });
+
+        async function handleConversation(step, userInput = "") {
+            // Ocultar el botón de acción principal durante la conversación
+            actionButton.style.display = 'none';
+
+            // Convertir la entrada del usuario a minúsculas para facilitar la comparación
+            const input = userInput.toLowerCase().trim();
+
+            // Comando global para ver el menú
+            if (input.includes("quiero ver el menú") || input.includes("muéstrame el menú") || input.includes("volver al menú")) {
+                currentStep = 'SHOW_MENU';
+            }
+            
+            // --- INICIO DEL BLOQUE TRY ---
+            // Este bloque 'try' ahora envolverá solo la ejecución del paso,
+            // y el 'catch' manejará la lógica de reintento.
+            try {
+                console.log(`--- Manejando paso: ${step} ---`);
+                
+                switch (step) {
+                    // --- PASO 1: BIENVENIDA ---
+                    case 'START':
+                        await biaSpeaks('Hola. Soy Bia, tu asistente para la propuesta del Observatorio de Inteligencia Artificial en Colombia. Este es un prototipo simulado. Te daré unas breves instrucciones de uso: Mi función es hablar y escucharte. Yo haré preguntas en voz alta. Cuando termine, el ícono del micrófono se activará para que puedas responder. Si prefieres no usar tu voz, cuando aparezca el menú de opciones, también podrás hacer clic en los botones. No olvides permitir el acceso a micrófono para tener una experiencia más completa. ¿Estás listo o lista para participar?');
+                        currentStep = 'START_LISTEN';
+                        await handleConversation('START_LISTEN');
+                        break;
+                    
+                    case 'START_LISTEN':
+                        const readyResponse = await userListens('Di "Sí" o "Listo" para continuar...');
+                        if (readyResponse.includes('sí') || readyResponse.includes('listo') || readyResponse.includes('lista')) {
+                            currentStep = 'GET_NAME'; // Siguiente estado
+                            await handleConversation('GET_NAME');
+                        } else {
+                            // Si dice algo que no es "sí", se lo pedimos de nuevo.
+                            await biaSpeaks('No estoy segura de haberte entendido. ¿Podemos empezar? Di "Sí" para comenzar.');
+                            await handleConversation('START_LISTEN'); // Repite solo la escucha
+                        }
+                        break;
+
+                    // --- PASO 2: OBTENER NOMBRE ---
+                    case 'GET_NAME':
+                        await biaSpeaks('¡Excelente! Para comenzar, ¿cuál es tu nombre?');
+                        currentStep = 'GET_NAME_LISTEN';
+                        await handleConversation('GET_NAME_LISTEN');
+                        break;
+
+                    case 'GET_NAME_LISTEN':
+                        userName = await userListens('Dime tu nombre...');
+                        userName = userName.charAt(0).toUpperCase() + userName.slice(1);
+                        currentStep = 'GET_TRUST_SCORE'; // Siguiente estado
+                        await handleConversation('GET_TRUST_SCORE');
+                        break;
+
+                    // --- PASO 3: OBTENER PUNTUACIÓN ---
+                    case 'GET_TRUST_SCORE':
+                        await biaSpeaks(`¡Un gusto saludarte, ${userName}! Del 1 al 10, ¿qué tanto confías en que una Inteligencia Artificial participe en la gobernanza de tu país?`);
+                        currentStep = 'GET_TRUST_SCORE_LISTEN';
+                        await handleConversation('GET_TRUST_SCORE_LISTEN');
+                        break;
+
+                    case 'GET_TRUST_SCORE_LISTEN':
+                        lastUserAnswer = await userListens('Di un número del 1 al 10...');
+                        // Validación simple (opcional pero buena idea)
+                        if (!/\d/.test(lastUserAnswer)) {
+                            await biaSpeaks(`Hmm, no entendí eso como un número, ${userName}. Pero gracias por tu honestidad. Ahora, te mostraré mi menú principal.`);
+                        } else {
+                            await biaSpeaks(`Entendido, ${userName}. Has dicho ${lastUserAnswer}. Gracias por tu honestidad. Ahora, te mostraré mi menú principal.`);
+                        }
+                        currentStep = 'SHOW_MENU'; // Siguiente estado
+                        await handleConversation('SHOW_MENU');
+                        break;
+
+                    // --- PASO 4: MENÚ PRINCIPAL ---
+                    case 'SHOW_MENU':
+                        currentStep = 'AWAIT_MENU_CHOICE'; // Poner el estado de "esperando"
+                        clearMenu(); // Limpiar menú anterior por si acaso
+                        await biaSpeaks('Estas son las opciones del prototipo. ¿Sobre qué te gustaría conversar? Puedes decírmelo o usar los botones.');
+                        showMenu();
+                        listenForMenuChoice(); // No usamos 'await' para que la función principal termine
+                        break;
+
+                    case 'AWAIT_MENU_CHOICE':
+                        // La lógica se movió a listenForMenuChoice() y a los botones
+                        break;
+
+                    // --- RAMA 1: BENEFICIOS ---
+                    case 'BENEFITS':
+                        await biaSpeaks('¡Claro! Te cuento los beneficios que puedo ofrecer como agente del observatorio.');
+                        speechQueue = [
+                            'Primero, puedo generar Relacionamiento sin Fronteras. Es decir, ayudo a superar las barreras de idioma y movilidad para que Colombia pueda entrar fácilmente en nuevos mercados globales.',
+                            'También ofrezco Eficiencia Costo-Operativa. Reemplazo la necesidad de enviar grandes delegaciones internacionales, lo que reduce muchísimo los costos de representación y exportación.',
+                            'Además, funciono como un Hub de Vigilancia Agéntica. Esto significa que centralizo y certifico información, como la del SAR y la de inversión, para asegurar "contrataciones limpias" y aumentar la confianza internacional.',
+                            'Y lo más importante, me baso en la "Base Diella y Ética". Implemento principios de automatización, trazabilidad y supervisión ética. Esto minimiza las decisiones arbitrarias y asegura que se cumplan las nuevas leyes de IA.'
+                        ];
+                        await processSpeechQueue();
+                        currentStep = 'SHOW_MENU'; // Volver al menú
+                        await handleConversation('SHOW_MENU');
+                        break;
+
+                    // --- RAMA 2: FUNCIONES ---
+                    case 'FUNCTIONS':
+                        await biaSpeaks('¡Con gusto! Mis funciones principales están diseñadas para generar confianza y eficiencia.');
+                        speechQueue = [
+                            'Puedo representar digitalmente al país en mercados internacionales. Así, elimino barreras de idioma y los altos costos de movilidad.',
+                            'También puedo certificar la transparencia de los contratos públicos y las inversiones. Esto es clave para generar confianza a nivel internacional.',
+                            'Otra función es auditar y monitorear en tiempo real la información de riesgo, como la del SAR, y la gestión pública en general.',
+                            'Reduzco la discrecionalidad humana en procesos clave, usando automatización y asegurando una trazabilidad ética.',
+                            'Y finalmente, garantizo el cumplimiento de la nueva legislación de IA en todas las interacciones y supervisiones que realizo.'
+                        ];
+                        await processSpeechQueue();
+                        currentStep = 'SHOW_MENU'; // Volver al menú
+                        await handleConversation('SHOW_MENU');
+                        break;
+
+                    // --- RAMA 3: NOTICIAS ---
+                    case 'NEWS':
+                        await biaSpeaks('Perfecto, te comparto una de las noticias relevantes de los últimos días en Colombia.');
+                        const newsOptions = [
+                            'En política, el Presidente Petro denunció una "conspiración" en su contra. Al mismo tiempo, el Estado reconoció su responsabilidad internacional por los crímenes cometidos contra los miembros del partido político Unión Patriótica.',
+                            'En el ámbito judicial, el caso de Nicolás Petro volvió a tomar relevancia. La Fiscalía General de la Nación le imputó seis nuevos cargos, presuntamente relacionados con corrupción durante su período como diputado en el Atlántico.',
+                            'En noticias empresariales, el mercado de valores colombiano alcanzó un máximo histórico. El índice MSCI COLCAP se consolidó como el de mayor crecimiento en América Latina durante 2025. Además, TransMilenio realizó una emisión histórica de títulos para financiar troncales alimentadoras.'
+                        ];
+                        const randomNews = newsOptions[Math.floor(Math.random() * newsOptions.length)];
+                        await biaSpeaks(randomNews);
+                        await biaSpeaks('Ese es el resumen de la noticia. Ahora, volvamos al menú.');
+                        currentStep = 'SHOW_MENU'; // Volver al menú
+                        await handleConversation('SHOW_MENU');
+                        break;
+
+                    // --- RAMA 4: CONSULTA (SIMULACIÓN) ---
+                    case 'CONSULTATION':
+                        await biaSpeaks('Esta es una simulación de consulta ciudadana. Por favor, actúa tu parte. Iniciaremos ahora.');
+                        await biaSpeaks('Buenos días. Soy el Agente de Integridad Pública de Colombia. Mi función es asegurar la credibilidad y confianza en la gestión pública, basado en el "Hub de Vigilancia Agéntica". ¿En qué puedo ayudarte hoy?');
+                        currentStep = 'CONSULTATION_LISTEN_1';
+                        await handleConversation('CONSULTATION_LISTEN_1');
+                        break;
+
+                    case 'CONSULTATION_LISTEN_1':
+                        const consulta1 = await userListens('Plantea tu consulta (Ej: "Hola, tengo dudas sobre una licitación...")');
+                        currentStep = 'CONSULTATION_2';
+                        await handleConversation('CONSULTATION_2', consulta1);
+                        break;
+
+                    case 'CONSULTATION_2':
+                        await biaSpeaks('Entendido. ¿Tienes el número del contrato o el nombre oficial del proyecto?');
+                        currentStep = 'CONSULTATION_LISTEN_2';
+                        await handleConversation('CONSULTATION_LISTEN_2');
+                        break;
+
+                    case 'CONSULTATION_LISTEN_2':
+                        const consulta2 = await userListens('Dime el número o nombre (Ej: "Licitación LP-005-2025")');
+                        await biaSpeaks('Gracias. Permíteme consultar...');
+                        await new Promise(r => setTimeout(r, 1500)); // Simular espera
+                        await biaSpeaks(`He verificado la licitación ${consulta2}. Aquí están los datos clave: Estado: Adjudicada. Ganador: Consorcio Salud Futura 2025. Certificación: El proceso ha sido certificado como "Contratación Limpia". El Consorcio ha presentado todas las declaraciones SAR requeridas.`);
+                        currentStep = 'CONSULTATION_3';
+                        await handleConversation('CONSULTATION_3');
+                        break;
+                    
+                    case 'CONSULTATION_3':
+                        await biaSpeaks('¿Tienes alguna otra pregunta sobre esto?'); // Añadido para que sea más natural
+                        currentStep = 'CONSULTATION_LISTEN_3';
+                        await handleConversation('CONSULTATION_LISTEN_3');
+                        break;
+
+                    case 'CONSULTATION_LISTEN_3':
+                        const consulta3 = await userListens('Pregunta sobre la confiabilidad (Ej: "¿Cómo sé que eso es confiable?")');
+                        await biaSpeaks('Entiendo tu preocupación. Es fundamental para la confianza. Mi funcionamiento se basa en la "Base Diella y Ética". Esto significa que minimizo la discrecionalidad humana, ya que mi análisis es automatizado. Tengo trazabilidad total, todo queda registrado. Y opero bajo supervisión ética del Ministerio IA.');
+                        currentStep = 'CONSULTATION_4';
+                        await handleConversation('CONSULTATION_4');
+                        break;
+
+                    case 'CONSULTATION_4':
+                        await biaSpeaks('¿Deseas saber algo más sobre este contrato?'); // Añadido
+                        currentStep = 'CONSULTATION_LISTEN_4';
+                        await handleConversation('CONSULTATION_LISTEN_4');
+                        break;
+
+                    case 'CONSULTATION_LISTEN_4':
+                        const consulta4 = await userListens('Pide el detalle (Ej: "¿Dónde puedo ver el detalle?")');
+                        await biaSpeaks('Por supuesto. Puedes consultar el expediente digital completo en el Portal Único de Contratación, en el enlace que te mostraría en pantalla. Mi objetivo es que puedas verificar la integridad del proceso en tiempo real. Fin de la simulación de consulta.');
+                        currentStep = 'SHOW_MENU'; // Volver al menú
+                        await handleConversation('SHOW_MENU');
+                        break;
+
+                    // --- NUEVA RAMA 5: CONSULTA DB (SIMULACIÓN) ---
+                    case 'DB_CONSULT':
+                        await biaSpeaks('Iniciando simulación de consulta a la base de datos de contratación. Esta función, en una versión completa, me permitiría buscar en todos los contratos públicos de los archivos que me diste.');
+                        await biaSpeaks('¿Qué tipo de consulta te gustaría simular? Por ejemplo, puedes pedirme "verifica el contrato más reciente en Bogotá" o "dame los detalles del contrato 8138185".');
+                        currentStep = 'DB_CONSULT_LISTEN_1';
+                        await handleConversation('DB_CONSULT_LISTEN_1');
+                        break;
+
+                    case 'DB_CONSULT_LISTEN_1':
+                        const consultaDB = await userListens('Dime tu consulta (Ej: "contrato más reciente en Bogotá")');
+                        await biaSpeaks(`Entendido. Procesando tu solicitud para: "${consultaDB}"...`);
+                        await new Promise(r => setTimeout(r, 2000)); // Simular espera más larga
+                        
+                        // Respuesta simulada basada en los datos reales del CSV
+                        await biaSpeaks("Consulta completada. He encontrado un resultado en la base de datos de Agosto 2025 para la Sede Bogotá.");
+                        speechQueue = [
+                            "Se trata del Número de Contrato: 8138185.",
+                            "El contratista es: BRAYAM CAMILO VELA GALINDO.",
+                            "El objeto del contrato es: 'Prestación de servicios profesionales para brindar el acompañamiento en el diseño, planificación, y recolección de datos... en el marco del cumplimiento de la Sentencia T302 de 2017.'",
+                            "La fecha de inicio del contrato es el primero de agosto de 2025. Fin de la simulación de consulta."
+                        ];
+                        await processSpeechQueue();
+                        currentStep = 'SHOW_MENU'; // Volver al menú
+                        await handleConversation('SHOW_MENU');
+                        break;
+
+                    // --- RAMA 6: FINALIZAR ---
+                    case 'END':
+                        currentStep = 'START'; // Reiniciar estado
+                        await biaSpeaks(`Entendido, ${userName || 'gracias'}. Muchas gracias por participar en este prototipo. ¡Que tengas un gran día!`);
+                        statusMessage.textContent = "Prototipo finalizado.";
+                        actionButton.innerText = "Reiniciar Prototipo";
+                        actionButton.disabled = false;
+                        actionButton.classList.remove('opacity-50');
+                        actionButton.style.display = 'block';
+                        actionButton.onclick = () => window.location.reload();
+                        break;
+                }
+            
+            // --- INICIO DEL BLOQUE CATCH (NUEVA LÓGICA) ---
+            } catch (error) {
+                if (error === 'speech-not-heard') {
+                    console.warn(`Error 'speech-not-heard' en el paso: ${step}`);
+                    await biaSpeaks('No te he entendido. ¿Podrías repetirlo, por favor?');
+                    
+                    let repeatResponse;
+                    try {
+                        // Reintentamos la escucha. 'step' sigue siendo el paso '_LISTEN'
+                        repeatResponse = await userListens('Intentémoslo de nuevo...');
+                    
+                        // Si tenemos éxito, procesamos la respuesta manualmente
+                        // para evitar la recursión que causa el bug.
+                        if (step === 'START_LISTEN') {
+                            if (repeatResponse.includes('sí') || repeatResponse.includes('listo') || repeatResponse.includes('lista')) {
+                                currentStep = 'GET_NAME';
+                                await handleConversation('GET_NAME');
+                            } else {
+                                await biaSpeaks('Sigo sin entender. ¿Podemos empezar? Di "Sí".');
+                                await handleConversation('START_LISTEN');
+                            }
+                        } else if (step === 'GET_NAME_LISTEN') {
+                            userName = repeatResponse.charAt(0).toUpperCase() + repeatResponse.slice(1);
+                            currentStep = 'GET_TRUST_SCORE';
+                            await handleConversation('GET_TRUST_SCORE');
+                        } else if (step === 'GET_TRUST_SCORE_LISTEN') {
+                            lastUserAnswer = repeatResponse;
+                            await biaSpeaks(`Entendido, ${userName}. Has dicho ${lastUserAnswer}. Gracias. Ahora, te mostraré mi menú principal.`);
+                            currentStep = 'SHOW_MENU';
+                            await handleConversation('SHOW_MENU');
+                        }
+                        // ... (se podrían añadir los otros pasos _LISTEN si fuera necesario) ...
+                        else {
+                            // Si es un error de escucha en un paso no manejado aquí (ej. menú),
+                            // simplemente volvemos a mostrar el menú como fallback.
+                            console.warn(`Error de escucha en paso no manejado: ${step}. Volviendo al menú.`);
+                            currentStep = 'SHOW_MENU';
+                            await handleConversation('SHOW_MENU');
+                        }
+
+                    } catch (innerError) {
+                        // Si falla *otra vez* (doble error), nos rendimos y volvemos al menú.
+                        if (innerError === 'speech-not-heard') {
+                            await biaSpeaks('Sigo sin oírte. Volvamos al menú principal.');
+                            currentStep = 'SHOW_MENU';
+                            await handleConversation('SHOW_MENU');
+                        }
+                    }
+
+                } else if (error === 'recognition-unavailable') {
+                    statusMessage.textContent = "Error: No se pudo iniciar el reconocimiento de voz.";
+                } else if (error.name === 'AbortError' || error.error === 'aborted' || error === 'aborted') {
+                    // El usuario hizo click en un botón, es un comportamiento normal.
+                    console.log("Reconocimiento abortado por acción del usuario.");
+                } else {
+                    console.error('Error en la conversación:', error);
+                    statusMessage.textContent = "Hubo un error. Reinicia el prototipo.";
+                }
+            }
+        }
+
+        
+        async function listenForMenuChoice() {
+            // Solo escuchar si estamos en el estado de menú
+            if (currentStep !== 'AWAIT_MENU_CHOICE') return;
+
+            try {
+                const menuChoice = await userListens('Dime "Beneficios", "Funciones", "Noticias", "Consulta" o "Finalizar".');
+                
+                if (currentStep !== 'AWAIT_MENU_CHOICE') return; // Salir si el usuario hizo click en un botón mientras tanto
+                clearMenu();
+
+                if (menuChoice.includes("beneficio")) {
+                    currentStep = 'BENEFITS';
+                    await handleConversation('BENEFITS');
+                } else if (menuChoice.includes("funci")) {
+                    currentStep = 'FUNCTIONS';
+                    await handleConversation('FUNCTIONS');
+                } else if (menuChoice.includes("noticia")) {
+                    currentStep = 'NEWS';
+                    await handleConversation('NEWS');
+                } else if (menuChoice.includes("consulta")) {
+                    currentStep = 'CONSULTATION';
+                    await handleConversation('CONSULTATION');
+                } else if (menuChoice.includes("contrato") || menuChoice.includes("base de datos")) { // NUEVA PALABRA CLAVE
+                    currentStep = 'DB_CONSULT';
+                    await handleConversation('DB_CONSULT');
+                } else if (menuChoice.includes("finalizar") || menuChoice.includes("terminar")) {
+                    currentStep = 'END';
+                    await handleConversation('END');
+                } else if (menuChoice.includes("menú")) {
+                    currentStep = 'SHOW_MENU';
+                    await handleConversation('SHOW_MENU');
+                } else {
+                    await biaSpeaks('No te entendí muy bien. Por favor, elige una opción del menú.');
+                    currentStep = 'SHOW_MENU'; // Volver a mostrar el menú por si acaso
+                    await handleConversation('SHOW_MENU');
+                }
+            } catch (error) {
+                if (error === 'speech-not-heard') {
+                    console.log('Silencio en el menú, re-escuchando.');
+                    if (currentStep === 'AWAIT_MENU_CHOICE') {
+                        await biaSpeaks('No te oí. Dime una opción del menú, por favor.');
+                        listenForMenuChoice(); // Volver a escuchar
+                    }
+                } else if (error.name === 'AbortError' || error.error === 'aborted' || error === 'aborted') {
+                    console.log('Escucha de menú abortada por click.');
+                } else {
+                    console.error("Error en listenForMenuChoice:", error);
+                    if (currentStep === 'AWAIT_MENU_CHOICE') {
+                        listenForMenuChoice(); // Intentar de nuevo
+                    }
+                }
+            }
+        }
+        
+
+        // --- Funciones de Menú ---
+
+        function showMenu() {
+            clearMenu();
+            const menuContainer = document.createElement('div');
+            menuContainer.id = 'menu-options';
+            menuContainer.className = 'flex flex-col space-y-2 mt-4';
+            
+            const options = [
+                { text: '1. Conocer mis beneficios', step: 'BENEFITS' },
+                { text: '2. Ver mis funciones', step: 'FUNCTIONS' },
+                { text: '3. Escuchar una noticia', step: 'NEWS' },
+                { text: '4. Hacer una consulta (Simulación)', step: 'CONSULTATION' },
+                { text: '5. Consultar Contratos (Simulación)', step: 'DB_CONSULT' }, // NUEVO BOTÓN
+                { text: '6. Finalizar prototipo', step: 'END' } // Botón anterior ahora es 6
+            ];
+
+            options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'menu-button';
+                button.textContent = option.text;
+                // Ajustar el texto del usuario para que no incluya el número
+                let userText = option.text.substring(option.text.indexOf(' ') + 1); 
+
+                button.onclick = () => {
+                    if (isSpeaking) return;
+                    // Detener la escucha si se hace clic
+                    if (isListening) {
+                        try { recognition.stop(); } catch(e) { console.warn("Error al detener recognition (normal si ya estaba detenido):", e)}
+                        isListening = false;
+                    }
+                    currentStep = option.step; 
+                    clearMenu();
+                    addMessageToChat('user', userText); // Añadir solo el texto
+                    handleConversation(option.step);
+                };
+                menuContainer.appendChild(button);
+            });
+
+            chatContainer.appendChild(menuContainer);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function clearMenu() {
+            const existingMenu = document.getElementById('menu-options');
+            if (existingMenu) existingMenu.remove();
+        }
+
+        // --- Funciones Auxiliares de Voz (Mejoradas) ---
+
+        function processSpeechQueue() {
+            return new Promise(async (resolve) => {
+                if (speechQueue.length === 0) {
+                    resolve();
+                    return;
+                }
+                const textToSpeak = speechQueue.shift();
+                await biaSpeaks(textToSpeak);
+                await new Promise(r => setTimeout(r, 250)); 
+                await processSpeechQueue();
+                resolve();
+            });
+        }
+
+        function biaSpeaks(text) {
+            isSpeaking = true;
+            console.log(`Bia Habla: "${text.substring(0, 40)}..."`);
+            return new Promise((resolve, reject) => {
+                if (!synthesis) {
+                    isSpeaking = false;
+                    console.error('La síntesis de voz no está disponible.');
+                    reject('La síntesis de voz no está disponible.');
+                    return;
+                }
+                
+                statusMessage.textContent = 'Bia está hablando...';
+                addMessageToChat('bia', text);
+                synthesis.cancel(); 
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'es-MX'; // Prioridad a Español de México
+                utterance.pitch = 1.1; 
+                utterance.rate = 1.0; 
+
+                // --- LÓGICA DE VOZ MEJORADA ---
+                let voices = synthesis.getVoices();
+                let spanishVoice = 
+                    voices.find(v => v.name.includes('Paulina') && v.lang.startsWith('es-MX')) || // Google MX (muy buena)
+                    voices.find(v => v.name.includes('Monica') && v.lang.startsWith('es-US')) || // Google US Spanish (buena)
+                    voices.find(v => v.lang.startsWith('es-MX')) || // Cualquier voz de México
+                    voices.find(v => v.lang.startsWith('es-US')) || // Cualquier voz de US Spanish
+                    voices.find(v => v.lang.startsWith('es-')) ||   // Cualquier voz en español
+                    voices.find(v => v.lang.startsWith('es-ES')); // Último recurso: España
+
+                if (spanishVoice) {
+                    utterance.voice = spanishVoice;
+                } else {
+                    console.warn("No se encontró una voz preferida en español (MX/US). Usando voz por defecto.");
+                }
+                
+                utterance.onend = () => {
+                    statusMessage.textContent = 'Bia ha terminado de hablar.';
+                    isSpeaking = false;
+                    resolve();
+                };
+                utterance.onerror = (event) => {
+                    console.error('Error de síntesis de voz:', event);
+                    isSpeaking = false;
+                    reject(event);
+                };
+                
+                synthesis.speak(utterance);
+            });
+        }
+
+        function userListens(prompt) {
+            isListening = true;
+            console.log(`Bia Escucha: (Prompt: ${prompt})`);
+            return new Promise((resolve, reject) => {
+                if (!recognition) {
+                    isListening = false;
+                    console.error('El reconocimiento de voz no está disponible.');
+                    reject('recognition-unavailable');
+                    return;
+                }
+
+                // Asegurarse de que no esté ya escuchando
+                try {
+                    recognition.stop();
+                } catch(e) {
+                    // No pasa nada si ya estaba detenido
+                }
+
+                statusMessage.textContent = `Escuchando... (${prompt})`;
+                actionButton.classList.add('listening-pulse');
+                actionButton.style.display = 'block';
+                actionButton.innerText = 'Escuchando...';
+                actionButton.disabled = true; 
+
+                let timer = setTimeout(() => {
+                    console.warn('Timeout de escucha.');
+                    recognition.stop();
+                    isListening = false;
+                    reject('speech-not-heard');
+                }, 8000); // Timeout de 8 segundos
+
+                recognition.onresult = (event) => {
+                    clearTimeout(timer);
+                    const transcript = event.results[0][0].transcript;
+                    console.log(`Usuario Dijo: "${transcript}"`);
+                    addMessageToChat('user', transcript);
+                    isListening = false;
+                    resolve(transcript.trim().toLowerCase());
+                };
+
+                recognition.onerror = (event) => {
+                    clearTimeout(timer);
+                    isListening = false;
+                    console.error('Error de reconocimiento:', event.error);
+                    if (event.error === 'no-speech' || event.error === 'audio-capture') {
+                        reject('speech-not-heard');
+                    } else if (event.error === 'aborted') {
+                        reject('aborted'); 
+                    } else {
+                        reject(event.error);
+                    }
+                };
+
+                recognition.onend = () => {
+                    clearTimeout(timer);
+                    isListening = false;
+                    actionButton.classList.remove('listening-pulse');
+                    actionButton.style.display = 'none';
+                    actionButton.disabled = false;
+                    console.log("Reconocimiento terminado.");
+                };
+
+                try {
+                    recognition.start();
+                } catch(e) {
+                    isListening = false;
+                    console.error("Error al iniciar recognition.start():", e);
+                    reject(e);
+                }
+            });
+        }
+
+        /**
+         * Añade un mensaje a la ventana de chat.
+         */
+        function addMessageToChat(sender, text) {
+            if (text.startsWith('<button')) return;
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble ' + (sender === 'bia' ? 'chat-bubble-bia' : 'chat-bubble-user');
+            bubble.textContent = text;
+            chatContainer.appendChild(bubble);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+    </script>
+</body>
+</html>
